@@ -1,15 +1,9 @@
 import datetime
 from collections import defaultdict
-from get_data import get_data
+from get_data import get_data_lines
 
 
-# data = get_data(4)
-with open('./data4.txt') as f:
-    data = f.read()
-
-lines = data.split('\n')
-
-sd = sorted(lines)
+sd = sorted(get_data_lines(4))
 
 
 def parse_d(my_line):

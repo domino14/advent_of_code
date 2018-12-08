@@ -18,6 +18,7 @@ for line in data:
     second_step = words[7]
     steps.append((first_step, second_step))
 
+total_workers = 5
 
 class Node:
     constant_cost = 60
@@ -27,7 +28,9 @@ class Node:
         self.children = []
         self.parents = []
         self.performed = False
-        self.time_to_perform = self.constant_cost + ord(name)
+        self.performing = False
+        self.time_to_perform = self.constant_cost + ord(name) - ord('A') + 1
+        self.time_left = self.time_to_perform
 
     def parents_performed(self):
         for p in self.parents:
@@ -74,30 +77,59 @@ order = []
 
 while True:
     for step in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+        if step not in node_dict:
+            continue
         if node_dict[step].parents_performed() and not node_dict[step].performed:
             node_dict[step].performed = True
             order.append(step)
             break
-    if len(order) == 26:
+    if len(order) == len(node_dict):
         break
 
 print('1: ', ''.join(order))
 
-total_workers = 5
-
+# Reset nodes and order for part 2
+for n in node_dict:
+    node_dict[n].performed = False
+order = []
+busy_workers = 0
 seconds = 0
 while True:
+    modified_secs = False
+
     for step in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-        if node_dict[step].parents_performed() and not node_dict[step].performed:
+        if step not in node_dict:
+            continue
+        print('checking step', step)
+        if node_dict[step].parents_performed() and not node_dict[step].performed and not node_dict[step].performing:
+            if busy_workers < total_workers:
+                print('# free workers', total_workers-busy_workers, 'assign to task', step)
+                busy_workers += 1
+                node_dict[step].performing = True
 
+    for step in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+        if step not in node_dict:
+            continue
+        if node_dict[step].performing:
+            modified_secs = True
+            node_dict[step].time_left -= 1
+            print('time left on task', step, node_dict[step].time_left)
 
-            node_dict[step].performed = True
-            order.append(step)
-            break
-    if len(order) == 26:
+            if node_dict[step].time_left == 0:
+                busy_workers -= 1
+                node_dict[step].performed = True
+                node_dict[step].performing = False
+                print('task', step, 'is done. freeing worker, mark as performed')
+                order.append(step)
+                # break
+            # break
+    if modified_secs:
+        seconds += 1
+    print('time elapsed', seconds)
+    if len(order) == len(node_dict):
         break
 
-
+print('2: ', seconds)
 
 # def traverse(node, order=order):
 #     node.performed = True

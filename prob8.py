@@ -15,6 +15,7 @@ class Node:
         self.num_metadata = num_metadata
         self.children = []  # Other nodes
         self.metadata = []
+        self.value = 0
 
 
 nodes = set()
@@ -24,17 +25,15 @@ metadata = 0
 
 def read_node(data, left):
     global metadata
-    print(f'reading data array, left={left}')
     if not data:
         return None, None
     n_children = data[left]
     n_metadata = data[left+1]
     left = left + 2
     node = Node(n_children, n_metadata)
-    print(f'Created node with n_children {n_children} n_metadata {n_metadata}')
     nodes.add(node)
+
     for c in range(n_children):
-        print(f'Child {c}:')
         child_node, new_left = read_node(data, left)
         if child_node is None:
             continue
@@ -42,14 +41,25 @@ def read_node(data, left):
         left = new_left
     # Once we're done reading the children, read metadata.
     node.metadata = data[left:left + n_metadata]
-    print(f'Assigning node metadata: {node.metadata}')
+    if n_children == 0:
+        node.value = sum(node.metadata)
+    else:
+        value = 0
+        for meta in node.metadata:
+            if meta == 0:
+                continue
+            meta -= 1
+            try:
+                value += node.children[meta].value
+            except IndexError:
+                pass
+        node.value = value
+
     metadata += sum(node.metadata)
     return node, left + n_metadata
 
-node = read_node(data, 0)
-print(metadata)
 
-# def traverse(node):
-#     for child in node.children:
-#         traverse(node, sum(node.metadata) + sum(child.metadata))
-#     return sum(node.metadata)
+node, _ = read_node(data, 0)
+print('1:', metadata)
+print('2:', node.value)
+

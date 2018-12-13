@@ -29,7 +29,7 @@ def get_data(prob, year=2018):
 def get_data_lines(prob, year=2018):
     data = get_data(prob, year)
     lines = data.split('\n')
-    return filter(lambda ln: ln.strip() != '', lines)
+    return list(filter(lambda ln: ln.strip() != '', lines))
 
 
 if __name__ == '__main__':

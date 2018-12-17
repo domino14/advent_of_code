@@ -166,18 +166,16 @@ class Unit:
 
 
 battle_map = list(filter(lambda y: y.strip() != '', """
-#########
-#G......#
-#.E.#...#
-#..##..G#
-#...##..#
-#...#...#
-#.G...G.#
-#.....G.#
-#########
+#######
+#.G...#
+#...EG#
+#.#.#G#
+#..G#E#
+#.....#
+#######
 """.split('\n')))
 
-battle_map = get_data_lines(15)
+# battle_map = get_data_lines(15)
 
 units = []
 parsed_map = []
@@ -235,6 +233,13 @@ def new_round():
     # print(f'sorted units: {srt}')
 
     for unit in filter(lambda unit: unit.alive, srt):
+        if (all_units_of_type_dead(Unit.ELF) or
+                all_units_of_type_dead(Unit.GOBLIN)):
+            return False  # round did not complete in its entirety.
+
+        if not unit.alive:
+            # The unit may have died mid-round.
+            continue
         # 1) move AND attack!
         adjacent = unit.adjacent_to_enemy(units)
         if adjacent:
@@ -259,6 +264,7 @@ def new_round():
                     adjacent = unit.adjacent_to_enemy(units)
                     if adjacent:
                         unit.attack(adjacent[0])
+    return True
 
 
 def all_units_of_type_dead(tp):
@@ -274,13 +280,13 @@ if __name__ == '__main__':
     print_map(units)
     round_counter = 0
     while True:
-        print('************* NEW ROUND **************')
-        new_round()
-        round_counter += 1
-        print(f'After {round_counter} rounds')
+        print(f'************* NEW ROUND {round_counter + 1} **************')
+        completed = new_round()
         print_map(units)
-        if (all_units_of_type_dead(Unit.ELF) or
-                all_units_of_type_dead(Unit.GOBLIN)):
+        if completed:
+            round_counter += 1
+            print(f'After {round_counter} rounds')
+        else:
             print(f'Quitting after {round_counter} total rounds')
             break
 

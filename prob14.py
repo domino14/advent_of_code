@@ -36,7 +36,16 @@ def process():
                 num_recipes):
             print(f'part 2: {len(scoreboard)-len(str(num_recipes))}')
             break
-        if len(scoreboard) % 10000 == 1:
+        # handle the case where two recipes were added instead of 1.
+        if ''.join([
+            str(x) for x in scoreboard[-len(str(num_recipes))-1:-1]]) == str(
+                num_recipes):
+            print(f'part 2: {len(scoreboard)-len(str(num_recipes))-1}')
+            break
+
+
+        # 71764232 is too high?
+        if len(scoreboard) % 1000000 == 0:
             print(f'{len(scoreboard)}..')
 
 

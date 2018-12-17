@@ -62,7 +62,7 @@ class Unit:
         print(f'Unit {self} has died :(')
         self.alive = False
 
-    def find_targets_in_range(self, units):
+    def find_targets_in_range(self, parsed_map, units):
         in_range = []
         for unit in units:
             if not unit.alive:
@@ -70,24 +70,24 @@ class Unit:
             if self.id == unit.id or self.tp == unit.tp:
                 continue
             # consider the 4 pts in the cardinal directions from this unit.
-            pts = check_in_range_pts(unit, units)
+            pts = check_in_range_pts(parsed_map, unit, units)
             in_range.extend(pts)
         return in_range
 
-    def find_reachable(self, in_range):
+    def find_reachable(self, parsed_map, units, in_range):
         """
         this function finds the (x, y) points in in_range that are actually
         reachable from (self.x, self.y)
         """
         reachable = []
         for pt in in_range:
-            r, cost, queue = self.is_reachable(pt)
+            r, cost, queue = self.is_reachable(parsed_map, units, pt)
             if r:
                 reachable.append((pt, cost, queue))
 
         return reachable
 
-    def other_unit_at(self, x, y):
+    def other_unit_at(self, units, x, y):
         for unit in units:
             if not unit.alive:
                 continue
@@ -95,7 +95,7 @@ class Unit:
                 return True
         return False
 
-    def is_reachable(self, pt):
+    def is_reachable(self, parsed_map, units, pt):
         # attempt to walk to pt. some sort of bucket fill algorithm?
         queue = [(pt[0], pt[1], 0)]
         el_idx = -1
@@ -112,16 +112,19 @@ class Unit:
             for cell in ll:
                 x, y, cctr = cell[0], cell[1], cell[2]
                 remove = False
-                if parsed_map[y][x] == '#' or self.other_unit_at(x, y):
+                if parsed_map[y][x] == '#' or self.other_unit_at(units, x, y):
                     remove = True
                 for inner_el in queue:
-                    if x == inner_el[0] and y == inner_el[1] and inner_el[2] <= cctr:
+                    if (x == inner_el[0] and y == inner_el[1] and
+                            inner_el[2] <= cctr):
                         remove = True
                         break
 
                 if not remove:
                     ll_copy.append(cell)
             queue.extend(ll_copy)
+            if x == self.x and y == self.y:
+                break
 
         # print(f'In is reachable, pt={pt}, queue={queue}')
         for el in queue:
@@ -165,23 +168,7 @@ class Unit:
         self.y = step[1]
 
 
-battle_map = list(filter(lambda y: y.strip() != '', """
-#######
-#.G...#
-#...EG#
-#.#.#G#
-#..G#E#
-#.....#
-#######
-""".split('\n')))
-
-# battle_map = get_data_lines(15)
-
-units = []
-parsed_map = []
-
-
-def check_in_range_pts(unit, units):
+def check_in_range_pts(parsed_map, unit, units):
     in_range = []
     for pt in ((unit.x+1, unit.y), (unit.x-1, unit.y),
                (unit.x, unit.y+1), (unit.x, unit.y-1)):
@@ -198,7 +185,7 @@ def check_in_range_pts(unit, units):
     return in_range
 
 
-def print_map(units):
+def print_map(parsed_map, units):
     sorted_units = sorted(units, key=unit_reading_sort_key)
 
     for y, m in enumerate(parsed_map):
@@ -212,7 +199,9 @@ def print_map(units):
     print()
 
 
-def parse_map(battle_map):
+def parse_map(battle_map, elf_attack_power):
+    parsed_map = []
+    units = []
     unit_id = 1
     for y, line in enumerate(battle_map):
         cur_line = []
@@ -221,20 +210,23 @@ def parse_map(battle_map):
                 cur_line.append(chr)
             elif chr == 'E' or chr == 'G':
                 cur_line.append('.')
-                unit = Unit(unit_id, chr, MAX_HP, ATTK, x, y)
+                unit = Unit(unit_id, chr, MAX_HP,
+                            elf_attack_power if chr == 'E' else ATTK, x, y)
                 units.append(unit)
+                print(f'Added unit {unit}')
                 unit_id += 1
 
         parsed_map.append(cur_line)
+    return parsed_map, units
 
 
-def new_round():
+def new_round(parsed_map, units):
     srt = sorted(units, key=unit_reading_sort_key)
     # print(f'sorted units: {srt}')
 
     for unit in filter(lambda unit: unit.alive, srt):
-        if (all_units_of_type_dead(Unit.ELF) or
-                all_units_of_type_dead(Unit.GOBLIN)):
+        if (all_units_of_type_dead(units, Unit.ELF) or
+                all_units_of_type_dead(units, Unit.GOBLIN)):
             return False  # round did not complete in its entirety.
 
         if not unit.alive:
@@ -250,9 +242,9 @@ def new_round():
         else:
             # move
             # find targets that are in range
-            in_range = unit.find_targets_in_range(units)
+            in_range = unit.find_targets_in_range(parsed_map, units)
             # print(f'In range of unit {unit}: ', in_range)
-            reachable = unit.find_reachable(in_range)
+            reachable = unit.find_reachable(parsed_map, units, in_range)
             # print(f'Reachable from unit {unit}: ', reachable)
             if reachable:
                 closest = unit.find_closest(reachable)
@@ -267,22 +259,34 @@ def new_round():
     return True
 
 
-def all_units_of_type_dead(tp):
+def all_units_of_type_dead(units, tp):
     return len(list(filter(lambda u: u.tp == tp and u.alive, units))) == 0
 
 
-if __name__ == '__main__':
-    # this works, but round counter is 1 too high for some reason
-    # (but not in the first worked-out example) so i subtract 1 manually
-    # it's also slow AF
-    parse_map(battle_map)
+def setup_game(attack_power):
+    # this works but is slow :(
+    battle_map = list(filter(lambda y: y.strip() != '', """
+#########
+#G......#
+#.E.#...#
+#..##..G#
+#...##..#
+#...#...#
+#.G...G.#
+#.....G.#
+#########
+    """.split('\n')))
+
+    battle_map = get_data_lines(15)
+
+    parsed_map, units = parse_map(battle_map, attack_power)
     print('Initially: ')
-    print_map(units)
+    print_map(parsed_map, units)
     round_counter = 0
     while True:
         print(f'************* NEW ROUND {round_counter + 1} **************')
-        completed = new_round()
-        print_map(units)
+        completed = new_round(parsed_map, units)
+        print_map(parsed_map, units)
         if completed:
             round_counter += 1
             print(f'After {round_counter} rounds')
@@ -292,3 +296,18 @@ if __name__ == '__main__':
 
     hp_sum = sum([u.hp for u in units if u.alive])
     print(f'Outcome: {round_counter * hp_sum}')
+    return units
+
+
+if __name__ == '__main__':
+    attack_power = 3
+    while True:
+        attack_power += 1
+        units = setup_game(attack_power)
+        success = True
+        for unit in units:
+            if unit.tp == Unit.ELF and unit.alive is False:
+                success = False
+        if success:
+            print(f'Did it with attack_power {attack_power}')
+            break

@@ -60,8 +60,8 @@ def create_map(lines):
 
 def print_map(map, min_y, max_y):
     # These can be varied for debugging.
-    x_min = 475
-    x_max = 525
+    x_min = 494
+    x_max = 507
     strs = []
     for y in range(min_y, max_y+1):
         arr = []
@@ -100,6 +100,7 @@ def trace_drop_path(map, min_y, max_y, x, y, drops_gen):
             if s1x != -1 and s2x != -1 and s1y == s2y:
                 ysettle = s1y
                 locs = sorted([s1x, s2x, WATER_LOC[0]])
+                print("settled", locs)
                 if locs[0] == WATER_LOC[0]:
                     xsettle = locs[2]
                 elif locs[2] == WATER_LOC[0]:
@@ -116,10 +117,9 @@ def trace_drop_path(map, min_y, max_y, x, y, drops_gen):
 
 
 def move_sideways(map, min_y, max_y, x, y, dir, drops_gen):
-    still_moving_sideways = True
     seen_map = defaultdict(int)
 
-    while still_moving_sideways:
+    while True:
         x += dir
 
         # print(f'In move sideways, testing {x}, {y}')
@@ -131,7 +131,6 @@ def move_sideways(map, min_y, max_y, x, y, dir, drops_gen):
                 if (x, y) not in recursed:
                     trace_drop_path(map, min_y, max_y, x, y, drops_gen)
                 recursed[(x, y)] = True
-                still_moving_sideways = False
                 return -1, -1
         else:
             # It's a wall or drop,  bounce back.
@@ -192,7 +191,7 @@ x=498, y=10..13
 x=504, y=10..13
 y=13, x=498..504""".split('\n')
 
-    lines = get_data_lines(17)
+    # lines = get_data_lines(17)
 
     map, min_x, max_x, min_y, max_y = create_map(lines)
     print(f'min_y={min_y}, max_y={max_y}, min_x={min_x}, max_x={max_x}')
@@ -211,7 +210,7 @@ y=13, x=498..504""".split('\n')
         drops_gen += 1
         # if drops_gen % 10 == 0:
         print(f'{drops_gen} ({last_settled_ct, last_sand_ct})')
-        # print(print_map(map, min_y, max_y))
+        print(print_map(map, min_y, max_y))
         if drops_gen % 1000 == 0:
             save_image(map, min_x, max_x, min_y, max_y,
                        f'drops_{drops_gen}.png')

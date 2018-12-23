@@ -116,6 +116,7 @@ func moveSideways(wtable map[int]map[int]rune, miny, maxy, x, y, dir, dropsGen i
 		} else {
 			x -= dir
 			dir *= -1
+			idx = y*100000 + x
 		}
 		seenMap[idx]++
 		if seenMap[idx] == 2 {
@@ -147,6 +148,8 @@ func traceDropPath(wtable map[int]map[int]rune, miny, maxy, x, y, dropsGen int) 
 				sort.Ints(i)
 				if i[0] == FountainX {
 					xsettle = i[2]
+				} else if i[2] == FountainX {
+					xsettle = i[0]
 				} else {
 					xsettle = i[0]
 				}
@@ -154,12 +157,7 @@ func traceDropPath(wtable map[int]map[int]rune, miny, maxy, x, y, dropsGen int) 
 			}
 			break
 		}
-		if dropsGen == 1281 {
-			// fmt.Println(countWater(wtable))
-			// fmt.Println(y)
-		}
 	}
-
 }
 
 func countWater(wtable map[int]map[int]rune, miny, maxy int) (int, int) {
@@ -180,6 +178,27 @@ func countWater(wtable map[int]map[int]rune, miny, maxy int) (int, int) {
 	return settled, sand
 }
 
+func printMap(wtable map[int]map[int]rune) {
+	lines := []string{}
+	for y := 1; y <= 13; y++ {
+		line := ""
+		for x := 494; x <= 507; x++ {
+			rn, ok := wtable[y][x]
+			if !ok {
+				line = line + "."
+			} else {
+				line = line + string(rn)
+			}
+		}
+		lines = append(lines, line)
+	}
+	fmt.Println()
+	for _, line := range lines {
+		fmt.Println(line)
+	}
+	fmt.Println()
+}
+
 func main() {
 	wtable, minx, maxx, miny, maxy := createMap()
 	fmt.Printf("miny=%v, maxy=%v, minx=%v, maxx=%v, map=%v",
@@ -188,6 +207,7 @@ func main() {
 	lastSand := -1
 	dropsGen := 0
 	RecursedMap = make(map[int]bool)
+
 	for {
 		RecursedMap = map[int]bool{}
 		fmt.Println("----------")
@@ -201,6 +221,9 @@ func main() {
 		lastSettled, lastSand = settled, sand
 		dropsGen++
 		fmt.Printf("%v (%v, %v)\n", dropsGen, lastSettled, lastSand)
+		// printMap(wtable)
+
 	}
-	fmt.Printf("Part 1: %v (%v)", lastSettled+lastSand, dropsGen)
+	fmt.Printf("Part 1: %v (part2: %v + %v) (%v)", lastSettled+lastSand,
+		lastSettled, lastSand, dropsGen)
 }

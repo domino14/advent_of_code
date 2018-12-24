@@ -33,9 +33,9 @@ def apply_opcode(opcode, instruction, registers):
 
         with two inputs (A, B) and an output (C)
     """
-    a = instruction[1]
-    b = instruction[2]
-    output_reg = instruction[3]
+    a = int(instruction[1])
+    b = int(instruction[2])
+    output_reg = int(instruction[3])
 
     if opcode == 'addr':
         output = registers[a] + registers[b]

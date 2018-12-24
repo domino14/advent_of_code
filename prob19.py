@@ -48,3 +48,9 @@ while executing:
     #     print(f'Cycle {cycles}, registers={registers}')
 
 print(f'solution: {registers[0]} (registers={registers}, cycles={cycles})')
+
+# See decompilation notes for part 2 and prob19_decompiled.py
+# This program is an extremely inefficient factorizer
+# answer for part 1: sum(factors of p), p = 943
+# answer for part 2: 1 + sum(factors of p), p = 10551343
+# == 10553390

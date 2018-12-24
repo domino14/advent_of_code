@@ -1,4 +1,5 @@
 """ Get data from the API """
+import re
 import os
 import requests
 
@@ -30,6 +31,16 @@ def get_data_lines(prob, year=2018):
     data = get_data(prob, year)
     lines = data.split('\n')
     return list(filter(lambda ln: ln.strip() != '', lines))
+
+
+def find_numbers(string, ints=True):
+    numexp = re.compile(r'[-]?\d[\d,]*[\.]?[\d{2}]*')
+    numbers = numexp.findall(string)
+    numbers = [x.replace(',', '') for x in numbers]
+    if ints is True:
+        return [int(x.replace(',', '').split('.')[0]) for x in numbers]
+    else:
+        return numbers
 
 
 if __name__ == '__main__':

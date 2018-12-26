@@ -1,5 +1,5 @@
 from get_data import get_data, get_data_lines
-
+import time
 
 MAX_HP = 200
 ATTK = 3
@@ -15,7 +15,7 @@ class Unit:
     ELF = 'E'
     GOBLIN = 'G'
 
-    def __init__(self, id, tp, hp, atk, x, y):
+    def __init__(self, id, tp, hp, atk, x, y, unit_loc_map):
         self.id = id
         self.tp = tp
         self.hp = hp
@@ -24,6 +24,7 @@ class Unit:
         self.x = x
         self.y = y
         self.alive = True
+        unit_loc_map[(self.x, self.y)] = self
 
     def __str__(self):
         return f'<{self.tp}: @ ({self.x}, {self.y}) (HP = {self.hp})>'
@@ -51,15 +52,16 @@ class Unit:
                           unit.hp * SORT_MULTIPLIER * SORT_MULTIPLIER +
                           unit.y * SORT_MULTIPLIER + unit.x))
 
-    def attack(self, unit):
+    def attack(self, unit, unit_loc_map):
         # print(f'{self.tp} ({self.x}, {self.y}) attacks {unit.tp} '
         #       f'({unit.x}, {unit.y})')
         unit.hp -= self.atk
         if unit.hp <= 0:
-            unit.die()
+            unit.die(unit_loc_map)
 
-    def die(self):
+    def die(self, unit_loc_map):
         print(f'Unit {self} has died :(')
+        del unit_loc_map[(self.x, self.y)]
         self.alive = False
 
     def find_targets_in_range(self, parsed_map, units):
@@ -74,32 +76,30 @@ class Unit:
             in_range.extend(pts)
         return in_range
 
-    def find_reachable(self, parsed_map, units, in_range):
+    def find_reachable(self, parsed_map, unit_loc_map, in_range):
         """
         this function finds the (x, y) points in in_range that are actually
         reachable from (self.x, self.y)
         """
         reachable = []
         for pt in in_range:
-            r, cost, queue = self.is_reachable(parsed_map, units, pt)
+            r, cost, queue = self.is_reachable(parsed_map, unit_loc_map, pt)
             if r:
                 reachable.append((pt, cost, queue))
-
         return reachable
 
-    def other_unit_at(self, units, x, y):
-        for unit in units:
-            if not unit.alive:
-                continue
-            if unit.id != self.id and unit.x == x and unit.y == y:
-                return True
+    def other_unit_at(self, unit_loc_map, x, y):
+        if (x, y) in unit_loc_map:
+            unit = unit_loc_map[(x, y)]
+            return unit.alive and unit.id != self.id
+
         return False
 
-    def is_reachable(self, parsed_map, units, pt):
+    def is_reachable(self, parsed_map, unit_loc_map, pt):
         # attempt to walk to pt. some sort of bucket fill algorithm?
         queue = [(pt[0], pt[1], 0)]
+        queue_map = {(pt[0], pt[1]): 0}
         el_idx = -1
-
         while el_idx < len(queue) - 1:
             el_idx += 1
             x, y, ctr = queue[el_idx]
@@ -108,28 +108,25 @@ class Unit:
                   (x - 1, y, ctr + 1),
                   (x, y + 1, ctr + 1),
                   (x, y - 1, ctr + 1)]
-            ll_copy = []
             for cell in ll:
                 x, y, cctr = cell[0], cell[1], cell[2]
                 remove = False
-                if parsed_map[y][x] == '#' or self.other_unit_at(units, x, y):
+                if parsed_map[y][x] == '#' or self.other_unit_at(
+                        unit_loc_map, x, y):
                     remove = True
-                for inner_el in queue:
-                    if (x == inner_el[0] and y == inner_el[1] and
-                            inner_el[2] <= cctr):
-                        remove = True
-                        break
-
+                if (x, y) in queue_map and queue_map[(x, y)] <= cctr:
+                    remove = True
                 if not remove:
-                    ll_copy.append(cell)
-            queue.extend(ll_copy)
-            if x == self.x and y == self.y:
-                break
+                    queue.append(cell)
+                    queue_map[(cell[0], cell[1])] = cell[2]
 
-        # print(f'In is reachable, pt={pt}, queue={queue}')
-        for el in queue:
-            if el[0] == self.x and el[1] == self.y:
-                return True, el[2], queue  # cost
+            # Can't tell if I can do the following as an optimization.
+            # Maybe it risks only finding one shortest path and it being the
+            # wrong one.
+            # if x == self.x and y == self.y:
+            #     break
+        if (self.x, self.y) in queue_map:
+            return True, queue_map[(self.x, self.y)], queue
 
         return False, None, None
 
@@ -142,7 +139,7 @@ class Unit:
         # print(f'Closest sorted: {reachable}')
         return reachable[0]
 
-    def move_to_closest(self, closest):
+    def move_to_closest(self, closest, unit_loc_map):
         # closest is a tuple. the second index is the queue.
         queue = closest[2]
         # find ourselves in the queue.
@@ -164,8 +161,10 @@ class Unit:
         for s in next_step:
             assert abs(self.x - s[0]) + abs(self.y - s[1]) == 1
 
+        del unit_loc_map[(self.x, self.y)]
         self.x = step[0]
         self.y = step[1]
+        unit_loc_map[(self.x, self.y)] = self
 
 
 def check_in_range_pts(parsed_map, unit, units):
@@ -202,6 +201,7 @@ def print_map(parsed_map, units):
 def parse_map(battle_map, elf_attack_power):
     parsed_map = []
     units = []
+    unit_loc_map = {}
     unit_id = 1
     for y, line in enumerate(battle_map):
         cur_line = []
@@ -211,16 +211,17 @@ def parse_map(battle_map, elf_attack_power):
             elif chr == 'E' or chr == 'G':
                 cur_line.append('.')
                 unit = Unit(unit_id, chr, MAX_HP,
-                            elf_attack_power if chr == 'E' else ATTK, x, y)
+                            elf_attack_power if chr == 'E' else ATTK, x, y,
+                            unit_loc_map)
                 units.append(unit)
                 print(f'Added unit {unit}')
                 unit_id += 1
 
         parsed_map.append(cur_line)
-    return parsed_map, units
+    return parsed_map, units, unit_loc_map
 
 
-def new_round(parsed_map, units):
+def new_round(parsed_map, units, unit_loc_map):
     srt = sorted(units, key=unit_reading_sort_key)
     # print(f'sorted units: {srt}')
 
@@ -234,28 +235,29 @@ def new_round(parsed_map, units):
             continue
         # 1) move AND attack!
         adjacent = unit.adjacent_to_enemy(units)
-        if adjacent:
-            # attack!
-            # already sorted by HP and reading order.
-            # print(f'Adjacent to {unit} are {adjacent}')
-            unit.attack(adjacent[0])
-        else:
+        if not adjacent:
             # move
             # find targets that are in range
             in_range = unit.find_targets_in_range(parsed_map, units)
+
             # print(f'In range of unit {unit}: ', in_range)
-            reachable = unit.find_reachable(parsed_map, units, in_range)
+            reachable = unit.find_reachable(parsed_map, unit_loc_map, in_range)
+
             # print(f'Reachable from unit {unit}: ', reachable)
             if reachable:
                 closest = unit.find_closest(reachable)
+
                 # print(f'Chose a point: {closest}, moving to it')
                 # finally, move to closest.
                 if closest:
-                    unit.move_to_closest(closest)
+                    unit.move_to_closest(closest, unit_loc_map)
+
                     # we attack in the same turn!
                     adjacent = unit.adjacent_to_enemy(units)
-                    if adjacent:
-                        unit.attack(adjacent[0])
+
+        if adjacent:
+            unit.attack(adjacent[0], unit_loc_map)
+
     return True
 
 
@@ -266,26 +268,21 @@ def all_units_of_type_dead(units, tp):
 def setup_game(attack_power):
     # this works but is slow :(
     battle_map = list(filter(lambda y: y.strip() != '', """
-#########
-#G......#
-#.E.#...#
-#..##..G#
-#...##..#
-#...#...#
-#.G...G.#
-#.....G.#
-#########
+########
+#..E..G#
+#G######
+########
     """.split('\n')))
 
-    battle_map = get_data_lines(15)
+    # battle_map = get_data_lines(15)
 
-    parsed_map, units = parse_map(battle_map, attack_power)
-    print('Initially: ')
+    parsed_map, units, unit_loc_map = parse_map(battle_map, attack_power)
+    print(f'Attack: {attack_power}')
     print_map(parsed_map, units)
     round_counter = 0
     while True:
-        print(f'************* NEW ROUND {round_counter + 1} **************')
-        completed = new_round(parsed_map, units)
+        # print(f'************* NEW ROUND {round_counter + 1} **************')
+        completed = new_round(parsed_map, units, unit_loc_map)
         print_map(parsed_map, units)
         if completed:
             round_counter += 1
@@ -300,14 +297,16 @@ def setup_game(attack_power):
 
 
 if __name__ == '__main__':
-    attack_power = 3
-    while True:
-        attack_power += 1
-        units = setup_game(attack_power)
-        success = True
-        for unit in units:
-            if unit.tp == Unit.ELF and unit.alive is False:
-                success = False
-        if success:
-            print(f'Did it with attack_power {attack_power}')
-            break
+    setup_game(3)
+
+    # attack_power = 2
+    # while True:
+    #     attack_power += 1
+    #     units = setup_game(attack_power)
+    #     success = True
+    #     for unit in units:
+    #         if unit.tp == Unit.ELF and unit.alive is False:
+    #             success = False
+    #     if success:
+    #         print(f'Did it with attack_power {attack_power}')
+    #         break

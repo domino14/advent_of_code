@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 )
 
 type Point struct {
@@ -118,9 +117,8 @@ func bfs(bx, by, ex, ey int, cave caveMap) int {
 		for _, qm := range toAddCopy {
 			fastQueueLookup[toCode(qm.pt)] = qm.cost
 		}
-		if elIdx%10000 == 0 {
-			log.Printf("Processed %v cells... (sample %v, len %v)\n",
-				elIdx, qm, len(toAddCopy))
+		if elIdx%100000 == 0 {
+			// log.Printf("Processed %v cells... (sample %v, len %v)\n", elIdx, qm, len(toAddCopy))
 		}
 	}
 	printSteps(fastQueueLookup, startpt, endpt, fastQueueLookup[toCode(startpt)])
@@ -224,7 +222,7 @@ func findLowestNeighbor(pt Point, lookup map[int]int) (Point, int) {
 		panic(fmt.Sprintf("NO %v (%v) > %v (%v)", lowest, lowestPt, myCost, pt))
 	}
 
-	fmt.Printf("  Neighbors for %v: %v\n", pt, neighbors)
+	// fmt.Printf("  Neighbors for %v: %v\n", pt, neighbors)
 
 	return lowestPt, lowest
 }

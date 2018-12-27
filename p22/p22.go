@@ -20,8 +20,8 @@ const (
 )
 
 const (
-	BFSYmul = 5
-	BFSXmul = 12
+	BFSYmul = 2.5
+	BFSXmul = 10
 )
 
 var erosionLevelCache map[int]map[int]int
@@ -115,12 +115,13 @@ func drawMap(cave caveMap) string {
 
 func main() {
 	// tx, ty, depth := 3, 3, 6969
-	// tx, ty, depth := 9, 796, 6969
-	tx, ty, depth := 14, 709, 6084
+	tx, ty, depth := 16, 2, 6084
+	// tx, ty, depth := 14, 709, 6084
 	cave := createMap(tx, ty, depth)
 	fmt.Println(drawMap(cave))
 	risk := calculateRisk(0, 0, tx, ty, cave)
 	fmt.Printf("Risk: %v\n", risk)
+	fmt.Printf("Walking to: (%v, %v)\n", tx, ty)
 	cost := bfs(0, 0, tx, ty, cave)
 	fmt.Printf("Cost: %v\n", cost)
 }

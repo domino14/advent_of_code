@@ -14,6 +14,12 @@ type QueueMember struct {
 	cost int
 }
 
+func (qm *QueueMember) String() string {
+	return fmt.Sprintf("<pt: (%v, %v -- %v), tool: %v, cost: %v>",
+		qm.pt.x, qm.pt.y, regionTypeText(regionTypeFromCache(qm.pt.x, qm.pt.y)),
+		toolText(qm.pt.tool), qm.cost)
+}
+
 func toCode(pt Point) int {
 	return pt.tool*10000*10000 + pt.y*10000 + pt.x
 }
@@ -134,8 +140,19 @@ func toolText(tool int) string {
 	return "---"
 }
 
+func regionTypeText(rt int) string {
+	if rt == 0 {
+		return "rocky"
+	} else if rt == 1 {
+		return "wet"
+	} else {
+		return "narrow"
+	}
+}
+
 func printSteps(lookup map[int]int, startpt Point, endpt Point, finalCost int) {
-	fmt.Printf("Begin at %v, %v holding %v, t=%v\n", startpt.x, startpt.y, toolText(startpt.tool),
+	fmt.Printf("Begin at (%v, %v -- %v) holding %v, t=%v\n", startpt.x, startpt.y,
+		regionTypeText(regionTypeFromCache(startpt.x, startpt.y)), toolText(startpt.tool),
 		0)
 
 	pt := startpt
@@ -146,7 +163,8 @@ func printSteps(lookup map[int]int, startpt Point, endpt Point, finalCost int) {
 			fmt.Printf("Switched to holding %v (%v minutes)\n", toolText(lowest.tool),
 				finalCost-lowestCost)
 		} else {
-			fmt.Printf("Walked to %v, %v, holding %v (%v minutes)\n", lowest.x, lowest.y,
+			fmt.Printf("Walked to (%v, %v -- %v), holding %v (%v minutes)\n", lowest.x, lowest.y,
+				regionTypeText(regionTypeFromCache(lowest.x, lowest.y)),
 				toolText(lowest.tool), finalCost-lowestCost)
 		}
 
@@ -156,8 +174,9 @@ func printSteps(lookup map[int]int, startpt Point, endpt Point, finalCost int) {
 		}
 
 	}
-	fmt.Printf("End at %v, %v holding %v (%v minutes)\n", endpt.x, endpt.y, toolText(endpt.tool),
-		finalCost)
+	fmt.Printf("End at (%v, %v -- %v) holding %v (%v minutes)\n", endpt.x, endpt.y,
+		regionTypeText(regionTypeFromCache(endpt.x, endpt.y)),
+		toolText(endpt.tool), finalCost)
 }
 
 func findLowestNeighbor(pt Point, lookup map[int]int) (Point, int) {
@@ -166,19 +185,23 @@ func findLowestNeighbor(pt Point, lookup map[int]int) (Point, int) {
 	lowest := 100000000
 	myCode := toCode(pt)
 	myCost := lookup[myCode]
+	neighbors := []*QueueMember{}
 	for _, cell := range [][2]int{
 		{pt.x + 1, pt.y},
 		{pt.x, pt.y + 1},
 		{pt.x - 1, pt.y},
 		{pt.x, pt.y - 1}} {
 
-		code := toCode(Point{cell[0], cell[1], pt.tool})
+		newPt := Point{cell[0], cell[1], pt.tool}
+
+		code := toCode(newPt)
 		if cost, ok := lookup[code]; ok {
 
 			if cost < lowest {
 				lowest = cost
-				lowestPt = Point{cell[0], cell[1], pt.tool}
+				lowestPt = newPt
 			}
+			neighbors = append(neighbors, &QueueMember{newPt, cost})
 		}
 	}
 
@@ -186,18 +209,22 @@ func findLowestNeighbor(pt Point, lookup map[int]int) (Point, int) {
 		if tool == pt.tool {
 			continue
 		}
-		code := toCode(Point{pt.x, pt.y, tool})
+		newPt := Point{pt.x, pt.y, tool}
+		code := toCode(newPt)
 		if cost, ok := lookup[code]; ok {
 			if cost < lowest {
 				lowest = cost
-				lowestPt = Point{pt.x, pt.y, tool}
+				lowestPt = newPt
 			}
+			neighbors = append(neighbors, &QueueMember{newPt, cost})
 		}
 	}
 
 	if lowest >= myCost {
 		panic(fmt.Sprintf("NO %v (%v) > %v (%v)", lowest, lowestPt, myCost, pt))
 	}
+
+	fmt.Printf("  Neighbors for %v: %v\n", pt, neighbors)
 
 	return lowestPt, lowest
 }

@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type caveMap map[int]map[int]int
 
@@ -17,7 +20,7 @@ const (
 )
 
 const (
-	BFSYmul = 1.2
+	BFSYmul = 5
 	BFSXmul = 12
 )
 
@@ -88,10 +91,34 @@ func calculateRisk(tlx, tly, brx, bry int, cave caveMap) int {
 	return risk
 }
 
+func regionToChar(region int) string {
+	if region == 0 {
+		return "."
+	} else if region == 1 {
+		return "="
+	}
+	return "|"
+}
+
+func drawMap(cave caveMap) string {
+	cells := []string{}
+	for y := 0; y < len(cave); y++ {
+		row := []string{}
+		for x := 0; x < len(cave[y]); x++ {
+			row = append(row, regionToChar(regionTypeFromCache(x, y)))
+		}
+		rowStr := strings.Join(row[:], "")
+		cells = append(cells, rowStr)
+	}
+	return strings.Join(cells[:], "\n")
+}
+
 func main() {
-	// tx, ty, depth := 10, 10, 510
+	// tx, ty, depth := 3, 3, 6969
+	// tx, ty, depth := 9, 796, 6969
 	tx, ty, depth := 14, 709, 6084
 	cave := createMap(tx, ty, depth)
+	fmt.Println(drawMap(cave))
 	risk := calculateRisk(0, 0, tx, ty, cave)
 	fmt.Printf("Risk: %v\n", risk)
 	cost := bfs(0, 0, tx, ty, cave)

@@ -5,9 +5,9 @@ import "fmt"
 type caveMap map[int]map[int]int
 
 const (
-	Torch = iota
+	NoEquip = iota
+	Torch
 	Climbing
-	NoEquip
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 
 const (
 	BFSYmul = 1.2
-	BFSXmul = 12.0
+	BFSXmul = 12
 )
 
 var erosionLevelCache map[int]map[int]int
@@ -89,9 +89,11 @@ func calculateRisk(tlx, tly, brx, bry int, cave caveMap) int {
 }
 
 func main() {
-	tx, ty, depth := 10, 10, 510
-	// tx, ty, depth := 14, 709, 6084
+	// tx, ty, depth := 10, 10, 510
+	tx, ty, depth := 14, 709, 6084
 	cave := createMap(tx, ty, depth)
 	risk := calculateRisk(0, 0, tx, ty, cave)
-	fmt.Printf("Risk: %v", risk)
+	fmt.Printf("Risk: %v\n", risk)
+	cost := bfs(0, 0, tx, ty, cave)
+	fmt.Printf("Cost: %v\n", cost)
 }

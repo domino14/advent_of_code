@@ -2,7 +2,7 @@ input = open("/Users/cesar/05/input.txt", "r").readlines()
 
 
 def solve(hv=False):
-    arr = {}
+    mp = {}
     for line in input:
         a = line.split("->")
         x1, y1 = [int(n) for n in a[0].split(",")]
@@ -11,17 +11,17 @@ def solve(hv=False):
         if x1 == x2:
             for i in range(min(y1, y2), max(y1, y2) + 1):
                 c = (x1, i)
-                if c in arr:
-                    arr[c] += 1
+                if c in mp:
+                    mp[c] += 1
                 else:
-                    arr[c] = 1
+                    mp[c] = 1
         elif y1 == y2:
             for i in range(min(x1, x2), max(x1, x2) + 1):
                 c = (i, y1)
-                if c in arr:
-                    arr[c] += 1
+                if c in mp:
+                    mp[c] += 1
                 else:
-                    arr[c] = 1
+                    mp[c] = 1
         elif not hv:
             # diagonal
             if x1 > x2:
@@ -33,14 +33,14 @@ def solve(hv=False):
                 else:
                     j = y1 - (i - x1)
                 c = (i, j)
-                if c in arr:
-                    arr[c] += 1
+                if c in mp:
+                    mp[c] += 1
                 else:
-                    arr[c] = 1
+                    mp[c] = 1
 
     ct = 0
-    for i in arr:
-        if arr[i] > 1:
+    for i in mp:
+        if mp[i] > 1:
             ct += 1
 
     print(ct)

@@ -5,11 +5,11 @@ nums = [int(n) for n in input[0].split(",")]
 # nums = [16, 1, 2, 0, 4, 2, 7, 1, 2, 14]
 
 large_n = 1e10
+min_pos = min(nums)
+max_pos = max(nums)
 
 
 def align(p1=False):
-    min_pos = min(nums)
-    max_pos = max(nums)
 
     min_fuel = large_n
 
@@ -30,3 +30,13 @@ def align(p1=False):
 
 align(True)
 align(False)
+
+
+# Andy's solutions :D
+print(min(sum(abs(v - x) for v in nums) for x in range(min_pos, max_pos + 1)))
+print(
+    min(
+        sum(y * (y + 1) // 2 for y in (abs(v - x) for v in nums))
+        for x in range(min_pos, max_pos + 1)
+    )
+)

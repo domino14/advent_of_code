@@ -14,14 +14,14 @@ incompletes = []
 
 def find(line):
     open_chunks = []
-    for c in list(line):
-        if c in (closers.keys()):
+    for c in line:
+        if c in closers:
             open_chunks.append(c)
         else:
             # closing character
             if c in closers.values() and open_chunks[-1] != inv_closers[c]:
                 return c
-            open_chunks = open_chunks[:-1]
+            open_chunks.pop()
 
     return None
 
@@ -45,7 +45,7 @@ def complete(line):
         if c in (closers.keys()):
             open_chunks.append(c)
         else:
-            open_chunks = open_chunks[:-1]
+            open_chunks.pop()
 
     score = 0
 

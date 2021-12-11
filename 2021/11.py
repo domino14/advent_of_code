@@ -1,4 +1,4 @@
-input = open("/Users/cesar/11/input.txt", "r").readlines()
+input = open("./11/input.txt", "r").readlines()
 
 
 m = []
@@ -25,9 +25,7 @@ def diag_adj(m, r, c):
     actual = []
 
     for p in pts:
-        if p[0] < 0 or p[0] >= len(m):
-            continue
-        if p[1] < 0 or p[1] >= len(m[p[0]]):
+        if p[0] < 0 or p[0] >= len(m) or p[1] < 0 or p[1] >= len(m[p[0]]):
             continue
         actual.append(p)
     return actual

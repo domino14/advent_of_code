@@ -10,16 +10,16 @@ for row in input:
     m.append(r)
 
 
-def diag_adj(m, row, column):
+def diag_adj(m, r, c):
     pts = [
-        (row + 1, column),
-        (row - 1, column),
-        (row, column + 1),
-        (row, column - 1),
-        (row + 1, column + 1),
-        (row + 1, column - 1),
-        (row - 1, column + 1),
-        (row - 1, column - 1),
+        (r + 1, c),
+        (r - 1, c),
+        (r, c + 1),
+        (r, c - 1),
+        (r + 1, c + 1),
+        (r + 1, c - 1),
+        (r - 1, c + 1),
+        (r - 1, c - 1),
     ]
 
     actual = []
@@ -41,6 +41,7 @@ def flash(m, ridx, cidx, flashed):
         return
     global num_flashes
     num_flashes += 1
+
     flashed.add((ridx, cidx))
     d = diag_adj(m, ridx, cidx)
     for (r, c) in d:
@@ -51,15 +52,15 @@ def flash(m, ridx, cidx, flashed):
 
 def st(m):
     # run a step
-    for ridx, row in enumerate(m):
-        for cidx, c in enumerate(row):
+    for ridx, r in enumerate(m):
+        for cidx in range(len(r)):
             m[ridx][cidx] += 1
 
     flashed = set()
 
-    for ridx, row in enumerate(m):
-        for cidx, c in enumerate(row):
-            if c > 9:
+    for ridx, r in enumerate(m):
+        for cidx in range(len(r)):
+            if m[ridx][cidx] > 9:
                 # flash
                 flash(m, ridx, cidx, flashed)
 

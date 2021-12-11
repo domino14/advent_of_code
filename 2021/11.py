@@ -37,8 +37,6 @@ num_flashes = 0
 
 
 def flash(m, ridx, cidx, flashed):
-    if (ridx, cidx) in flashed:
-        return
     global num_flashes
     num_flashes += 1
 
@@ -46,7 +44,7 @@ def flash(m, ridx, cidx, flashed):
     d = diag_adj(m, ridx, cidx)
     for (r, c) in d:
         m[r][c] += 1
-        if m[r][c] > 9:
+        if m[r][c] > 9 and (r, c) not in flashed:
             flash(m, r, c, flashed)
 
 
@@ -60,7 +58,7 @@ def st(m):
 
     for ridx, r in enumerate(m):
         for cidx in range(len(r)):
-            if m[ridx][cidx] > 9:
+            if m[ridx][cidx] > 9 and (ridx, cidx) not in flashed:
                 # flash
                 flash(m, ridx, cidx, flashed)
 

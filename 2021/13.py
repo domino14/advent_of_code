@@ -10,7 +10,6 @@ for line in input:
         continue
     if parse_dots:
         x, y = line.strip().split(",")
-
         dots.add((int(x), int(y)))
     else:
         a, b = line.split("fold along ")
@@ -20,21 +19,15 @@ for line in input:
 
 def fold(axis, n, dots, new_dots):
     for dot in dots:
-        if axis == "y":
-            # fold up
-            if dot[1] > n:
-                new_y = (2 * n) - dot[1]
-                new_dots.add((dot[0], new_y))
+        check = dot[1] if axis == "y" else dot[0]
+        if check > n:
+            if axis == "y":
+                new_dot = (dot[0], (2 * n) - check)
             else:
-                new_dots.add(dot)
-        if axis == "x":
-            if dot[0] > n:
-                # fold left
-                new_x = (2 * n) - dot[0]
-                new_dots.add((new_x, dot[1]))
-
-            else:
-                new_dots.add(dot)
+                new_dot = ((2 * n) - check, dot[1])
+        else:
+            new_dot = dot
+        new_dots.add(new_dot)
 
 
 new_dots = set()
@@ -47,18 +40,13 @@ for i in range(len(inst)):
     dots = new_dots
     new_dots = set()
 
-mat = [["." for x in range(40)] for y in range(40)]
-for dot in dots:
-    mat[dot[0]][dot[1]] = "#"
 
-minr = min([x[0] for x in dots])
 maxr = max([x[0] for x in dots])
-minc = min([x[1] for x in dots])
 maxc = max([x[1] for x in dots])
 st = ""
 
-for r in range(minc, maxc + 1):
-    for c in range(minr, maxr + 1):
-        st += mat[c][r] + " "
+for r in range(0, maxc + 1):
+    for c in range(0, maxr + 1):
+        st += "# " if (c, r) in dots else ". "
     st += "\n"
 print(st)

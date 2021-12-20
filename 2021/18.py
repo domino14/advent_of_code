@@ -172,9 +172,7 @@ def add(i: list, j: list):
 
 
 def magnitude(s):
-    if type(s) == list:
-        return 3 * magnitude(s[0]) + 2 * magnitude(s[1])
-    return s
+    return 3 * magnitude(s[0]) + 2 * magnitude(s[1]) if type(s) == list else s
 
 
 last = eval(input[0].strip())
@@ -191,6 +189,8 @@ for i in range(len(input)):
     if i % 10 == 0:
         print("trying", i)
     for j in range(len(input)):
+        if i == j:
+            continue
         max_mag = max(
             magnitude(add(eval(input[i].strip()), eval(input[j].strip()))),
             max_mag,
